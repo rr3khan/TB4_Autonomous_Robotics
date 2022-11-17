@@ -9,6 +9,57 @@ from point_3_datascan_formatted import point_3_data
 # scan data for point 6
 from point_6_datascan_formatted import point_6_data
 
+class similarity():
+    def __init__(self):
+
+        # filter out intesity data from data set
+        self.point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
+        self.point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
+
+        # generate histogram bins for the point 3 data
+        self.point_3_np_hist, _ = np.histogram(self.point_3_data_filtered[0], 10000)
+        self.point_6_np_hist, _ = np.histogram(self.point_6_data_filtered[0], 10000)
+
+    def similarity_check(self, simulated_data, point_toogle: int):
+
+        if point_toogle == 0:
+            # if 0 use data from point 3
+            comparison_hist = self.point_3_np_hist
+        else:
+            # else if not 0 use from point 6
+            comparison_hist = self.point_6_np_hist
+
+        # convert the simulated data into a histogram dataset
+        simulated_hist = np.histogram(simulated_data[0], 10000)
+
+        # find the norms of each set
+        simulated_norm = np.linalg.norm(simulated_hist[0])
+        comparison_norm = np.linalg.norm(comparison_hist)
+
+        # return a similarity value between 0 and 1 also attach the coordinate data in the tuple
+        if simulated_norm > comparison_norm:
+            return (comparison_norm/simulated_norm, simulated_data[1])
+        else:
+            return (simulated_norm/comparison_norm, simulated_data[1])
+
+
+def pixel_2_m(pixel_dist: int, resolution: float) -> float:
+    return pixel_dist * resolution
+
+set_3 = [point_3_data[index] for index in range(0, len(point_3_data), 2)]
+set_6 = [point_3_data[index] for index in range(0, len(point_3_data), 2)]
+
+# print(set_3[0])
+
+p3 = (set_3[0], (20, 8)) # 190 arrays
+p6 = (set_6[0], (5, 4)) # 132 arrays
+
+# p3_norm = np.histogram(p3, 10)
+
+similarity_test = similarity()
+similarity_test_result = similarity_test.similarity_check(p3, 0)
+
+# print(similarity_test_result)
 
 # average data scan to reduce timeset to 1 array of 720 values
 # todo average the scan values in the dataset
@@ -48,40 +99,3 @@ angle_array = [angle_increment*index for index in range(1, 721)]
 # define infinity/out of range/never returned for a lidar scan
 # inf = float('inf')
 # set inf as a really large number
-
-class similarity():
-    def __init__(self):
-
-        # filter out intesity data from data set
-        self.point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
-        self.point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
-
-        # generate histogram bins for the point 3 data
-        self.point_3_np_hist, _ = np.histogram(self.point_3_data_filtered[0], 10000)
-        self.point_6_np_hist, _ = np.histogram(self.point_6_data_filtered[0], 10000)
-
-    def similarity_check(self, simulated_data, point_toogle: int):
-
-        if point_toogle == 0:
-            # if 0 use data from point 3
-            comparison_hist = self.point_3_np_hist
-        else:
-            # else if not 0 use from point 6
-            comparison_hist = self.point_6_np_hist
-
-        # convert the simulated data into a histogram dataset
-        simulated_hist = np.histogram(simulated_data[0], 10000)
-
-        # find the norms of each set
-        simulated_norm = np.linalg.norm(simulated_hist)
-        comparison_norm = np.linalg.norm(comparison_hist)
-
-        # return a similarity value between 0 and 1 also attach the coordinate data in the tuple
-        if simulated_norm > comparison_norm:
-            return (comparison_norm/simulated_norm, simulated_data[1])
-        else:
-            return (simulated_norm/comparison_norm, simulated_data[1])
-
-
-def pixel_2_m(pixel_dist: int, resolution: float) -> float:
-    return pixel_dist * resolution
