@@ -9,13 +9,6 @@ from point_3_datascan_formatted import point_3_data
 # scan data for point 6
 from point_6_datascan_formatted import point_6_data
 
-# print(len(point_3_data)) # 380 arrays
-# print(len(point_6_data)) # 264 arrays
-
-# filter out intesity data from data set
-point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
-point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
-
 
 # average data scan to reduce timeset to 1 array of 720 values
 # todo average the scan values in the dataset
@@ -55,48 +48,40 @@ angle_array = [angle_increment*index for index in range(1, 721)]
 # define infinity/out of range/never returned for a lidar scan
 # inf = float('inf')
 # set inf as a really large number
-inf = 9999
 
-def similariy(point_3_data, point_6_data):
+class similarity():
+    def __init__(self):
 
-    # generate histogram bins for the point 3 data
-    point_3_np_hist, _ = np.histogram(point_3_data, 10000)
-    point_6_np_hist, _ = np.histogram(point_6_data, 10000)
+        # filter out intesity data from data set
+        self.point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
+        self.point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
 
-    similarity = np.linalg.norm(point_3_np_hist)/np.linalg.norm(point_6_np_hist)
+        # generate histogram bins for the point 3 data
+        self.point_3_np_hist, _ = np.histogram(self.point_3_data_filtered[0], 10000)
+        self.point_6_np_hist, _ = np.histogram(self.point_6_data_filtered[0], 10000)
 
-    return similarity
+    def similarity_check(self, simulated_data, point_toogle: int):
 
-    # sum = 0
-    # for a1, b1 in zip(array_1,array_2):
-    #     #  filter out non-return/ inf values
-    #     # max range of lidar is 12 m
-    #     # if a1 < 12 and b1 < 12:
-    #         # print("a1, b1", a1, b1)
-    #         sum = sum + (a1-b1)*(a1-b1)
+        if point_toogle == 0:
+            # if 0 use data from point 3
+            comparison_hist = self.point_3_np_hist
+        else:
+            # else if not 0 use from point 6
+            comparison_hist = self.point_6_np_hist
 
-    # return math.sqrt(sum)/len(array_1)
+        # convert the simulated data into a histogram dataset
+        simulated_hist = np.histogram(simulated_data[0], 10000)
 
-    # return math.sqrt(sum((a1-b1)*(a1-b1) for a1,b1 in zip(array_1,array_2)))/len(array_1)
+        # find the norms of each set
+        simulated_norm = np.linalg.norm(simulated_hist)
+        comparison_norm = np.linalg.norm(comparison_hist)
 
-# print(similariy(point_3_data_filtered[0], point_6_data_filtered[0]))
-# print(similariy(X,Z))
-
+        # return a similarity value between 0 and 1 also attach the coordinate data in the tuple
+        if simulated_norm > comparison_norm:
+            return (comparison_norm/simulated_norm, simulated_data[1])
+        else:
+            return (simulated_norm/comparison_norm, simulated_data[1])
 
 
 def pixel_2_m(pixel_dist: int, resolution: float) -> float:
     return pixel_dist * resolution
-
-
-# def similarity():
-#     return
-
-# # print("Num intensities: ", len(intentsity_data_example) )
-# # print("Num range_example_data: ", len(range_example_data) )
-# # print(inf)
-
-# print("Range testing",  similariy(range_example_data, range_example_data_2))
-
-# exp_1 = [1, 2, 3, inf]
-# exp_2 = [1, inf, 3, inf]
-# print("Range experiment one", similariy(exp_1, exp_2))
