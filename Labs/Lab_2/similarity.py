@@ -3,6 +3,8 @@ from PIL import Image
 import sys
 import matplotlib.pyplot as plt
 from math import cos, sin, sqrt
+# import KDTree library for comparison
+from sklearn.neighbors import KDTree
 # import scan data
 # data is currently in the form of alternating distance arrays 
 # and intensity arrays
@@ -116,18 +118,27 @@ class similarity():
         #Debug plots
 
         # return a similarity value between 0 and 1 also attach the coordinate data in the tuple
-        similarity = 0
-        if simulated_norm > comparison_norm:
-            similarity = (comparison_norm/simulated_norm)
-        else:
-            similarity = (simulated_norm/comparison_norm)
-        if similarity > 0.0:
-            print(similarity)
-            print(robot_pos)
-            plt.scatter(point_3_x, point_3_y, color="black")
-            plt.scatter(point_sim_x_dir, point_sim_y_dir, color="red")
-            plt.show()
-        return similarity
+        # similarity = 0
+        # if simulated_norm > comparison_norm:
+        #     similarity = (comparison_norm/simulated_norm)
+        # else:
+        #     similarity = (simulated_norm/comparison_norm)
+        # if similarity > 0.0:
+        #     print(similarity)
+        #     print(robot_pos)
+        #     plt.scatter(point_3_x, point_3_y, color="black")
+        #     plt.scatter(point_sim_x_dir, point_sim_y_dir, color="red")
+        #     plt.show()
+        kdt = KDTree(occupied_points_of_the_map_in_cartesian)
+        lidar_pointcloud_in_cartesian = []
+        distances= kdt.query(lidar_pointcloud_in_cartesian, k=1)[0][:]
+        # weight= np.sum (np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
+        #  OR 
+        # around 0.2 from here https://piazza.com/class/l66otfiv2xt5h2/post/156
+        # Thanks Ahmad
+        lidar_standard_deviation=0.2
+        weight= np.prod (np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
+        return weight
 
 
 
