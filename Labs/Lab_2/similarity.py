@@ -19,47 +19,61 @@ class similarity():
         # self.point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
         # self.point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
         # generate histogram bins for the point 3 data
-        self.selection_index = 120 #must be even
+        self.selection_index = 120 # must be even
         self.point_3_data_filtered = point_3_data_all[self.selection_index]
         self.point_6_data_filtered = point_6_data_all[self.selection_index]
-        self.point_3_np_hist, _ = np.histogram(self.point_3_data_filtered, "auto")
-        self.point_6_np_hist, _ = np.histogram(self.point_6_data_filtered, "auto")
+        # self.point_3_np_hist, _ = np.histogram(self.point_3_data_filtered, "auto")
+        # self.point_6_np_hist, _ = np.histogram(self.point_6_data_filtered, "auto")
 
     def distance(self, x1, y1, x2, y2):
         return sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
     def similarity_check(self, simulated_dist, sim_angles, point_toogle: int, simulated_points, robot_pos):
+
+        if point_toogle == 0:
+
+        # setup coordinates for point 3
         
-        # remove inf values
-        point_3_x = [pol2cart(self.point_3_data_filtered[index], angle_array[index])[0] for index in
-                     range(0, len(self.point_3_data_filtered))]
-        point_3_y = [pol2cart(self.point_3_data_filtered[index], angle_array[index])[1] for index in
-                     range(0, len(self.point_3_data_filtered))]
+            point_x = [pol2cart(self.point_3_data_filtered[index], angle_array[index])[0] for index in
+                        range(0, len(self.point_3_data_filtered))]
+            point_y = [pol2cart(self.point_3_data_filtered[index], angle_array[index])[1] for index in
+                        range(0, len(self.point_3_data_filtered))]
+        else:
+            point_x = [pol2cart(self.point_6_data_filtered[index], angle_array[index])[0] for index in
+                        range(0, len(self.point_6_data_filtered))]
+            point_y = [pol2cart(self.point_6_data_filtered[index], angle_array[index])[1] for index in
+                        range(0, len(self.point_6_data_filtered))]
 
-        dist_r = 3
-        new_data = []
-        new_point = []
-        i = 0
-        for index in self.point_3_data_filtered:
-            if index < dist_r:
-                new_data.append(index)
-                new_point.append(point_3_x[i])
-            i += 1
-                #self.point_3_data_filtered.remove(index)
-        self.point_3_data_filtered = new_data
-        point_3_x = new_point
 
-        new_data = []
-        new_point = []
-        i = 0
-        for index in self.point_3_data_filtered:
-            if index < dist_r:
-                new_data.append(index)
-                new_point.append(point_3_y[i])
-            i += 1
-            # self.point_3_data_filtered.remove(index)
-        self.point_3_data_filtered = new_data
-        point_3_y = new_point
+        # build the lidar cartian point cloud
+        lidar_pointcloud_in_cartesian = []
+        for index in range(len(point_x)):
+            lidar_pointcloud_in_cartesian.append([point_x[index], point_y[index]])
+
+        # dist_r = 3
+        # new_data = []
+        # new_point = []
+        # i = 0
+        # for index in self.point_3_data_filtered:
+        #     if index < dist_r:
+        #         new_data.append(index)
+        #         new_point.append(point_3_x[i])
+        #     i += 1
+        #         #self.point_3_data_filtered.remove(index)
+        # self.point_3_data_filtered = new_data
+        # point_3_x = new_point
+
+        # new_data = []
+        # new_point = []
+        # i = 0
+        # for index in self.point_3_data_filtered:
+        #     if index < dist_r:
+        #         new_data.append(index)
+        #         new_point.append(point_3_y[i])
+        #     i += 1
+        #     # self.point_3_data_filtered.remove(index)
+        # self.point_3_data_filtered = new_data
+        # point_3_y = new_point
 
         # print(len(self.point_3_data_filtered))
         # print(len(self.point_6_data_filtered))
@@ -89,20 +103,20 @@ class similarity():
 
         pixel_distances = [pixel_2_m(point_der_dist[index_num], resolution) for index_num in range(0, len(point_der_dist))]
         point_der_dist = pixel_distances
-        if point_toogle == 0:
-            # if 0 use data from point 3
-            comparison_hist = self.point_3_np_hist
-        elif point_toogle == 1:
-            # else if not 0 use from point 6
-            comparison_hist = self.point_6_np_hist
+        # if point_toogle == 0:
+        #     # if 0 use data from point 3
+        #     comparison_hist = self.point_3_np_hist
+        # elif point_toogle == 1:
+        #     # else if not 0 use from point 6
+        #     comparison_hist = self.point_6_np_hist
 
         # convert the simulated data into a histogram dataset
-        simulated_hist, _ = np.histogram(point_der_dist, "auto")
+        # simulated_hist, _ = np.histogram(point_der_dist, "auto")
 
         # find the norms of each set
         # print(simulated_hist)
-        simulated_norm = np.linalg.norm(simulated_hist)
-        comparison_norm = np.linalg.norm(comparison_hist)
+        # simulated_norm = np.linalg.norm(simulated_hist)
+        # comparison_norm = np.linalg.norm(comparison_hist)
 
         # Scatter plot
         # print("Here to")
@@ -129,15 +143,17 @@ class similarity():
         #     plt.scatter(point_3_x, point_3_y, color="black")
         #     plt.scatter(point_sim_x_dir, point_sim_y_dir, color="red")
         #     plt.show()
+
+        # x, y points of the map in cartesian 
+        occupied_points_of_the_map_in_cartesian = simulated_points
         kdt = KDTree(occupied_points_of_the_map_in_cartesian)
-        lidar_pointcloud_in_cartesian = []
         distances= kdt.query(lidar_pointcloud_in_cartesian, k=1)[0][:]
         # weight= np.sum (np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
         #  OR 
         # around 0.2 from here https://piazza.com/class/l66otfiv2xt5h2/post/156
         # Thanks Ahmad
         lidar_standard_deviation=0.2
-        weight= np.prod (np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
+        weight= np.prod(np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
         return weight
 
 
@@ -179,8 +195,8 @@ def pixel_2_m(pixel_dist: int, resolution: float) -> float:
 
 
 
-np.set_printoptions(threshold=sys.maxsize)
-im = np.array(Image.open('map_maze_2.pgm'))
+# np.set_printoptions(threshold=sys.maxsize)
+# im = np.array(Image.open('map_maze_2.pgm'))
 
 # Data from map_maze_2_yaml file
 # resolution of map, meters/pixel
@@ -205,7 +221,13 @@ angle_array = [angle_increment*index for index in range(1, 721)]
 # set inf as a really large number
 
 def pol2cart(radius, angle):
-    x = radius*cos(angle)
-    y = radius*sin(angle)
 
-    return (x, y)
+    if radius == float('inf'):
+        return float('inf')
+    else:
+        x = radius*cos(angle)
+        y = radius*sin(angle)
+
+        cart_point = [x, y]
+
+        return cart_point
