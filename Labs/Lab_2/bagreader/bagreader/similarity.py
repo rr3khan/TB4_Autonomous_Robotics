@@ -9,6 +9,9 @@ from point_3_datascan_formatted import point_3_data
 # scan data for point 6
 from point_6_datascan_formatted import point_6_data
 
+# import for plotting
+import matplotlib.pyplot as plt
+
 class similarity():
     def __init__(self):
 
@@ -35,6 +38,9 @@ class similarity():
         # find the norms of each set
         simulated_norm = np.linalg.norm(simulated_hist[0])
         comparison_norm = np.linalg.norm(comparison_hist)
+        
+        print("comparision norm", comparison_norm)
+        print("simulated norm", simulated_norm)
 
         # return a similarity value between 0 and 1 also attach the coordinate data in the tuple
         if simulated_norm > comparison_norm:
@@ -47,7 +53,7 @@ def pixel_2_m(pixel_dist: int, resolution: float) -> float:
     return pixel_dist * resolution
 
 set_3 = [point_3_data[index] for index in range(0, len(point_3_data), 2)]
-set_6 = [point_3_data[index] for index in range(0, len(point_3_data), 2)]
+set_6 = [point_6_data[index] for index in range(0, len(point_6_data), 2)]
 
 # print(set_3[0])
 
@@ -57,9 +63,9 @@ p6 = (set_6[0], (5, 4)) # 132 arrays
 # p3_norm = np.histogram(p3, 10)
 
 similarity_test = similarity()
-similarity_test_result = similarity_test.similarity_check(p3, 0)
+similarity_test_result = similarity_test.similarity_check(p3, 1)
 
-# print(similarity_test_result)
+print(similarity_test_result)
 
 # average data scan to reduce timeset to 1 array of 720 values
 # todo average the scan values in the dataset
@@ -99,3 +105,24 @@ angle_array = [angle_increment*index for index in range(1, 721)]
 # define infinity/out of range/never returned for a lidar scan
 # inf = float('inf')
 # set inf as a really large number
+
+# # Scatter plot
+# plt.scatter(set_3[0], angle_array)
+# plt.scatter(set_6[0], angle_array)
+
+def pol2cart(radius, angle):
+    x = radius*np.cos(angle)
+    y = radius*np.sin(angle)
+
+    return (x, y)
+
+point_3_data_filtered = [point_3_data[index] for index in range(0, len(point_3_data), 2)] # 190 arrays
+point_6_data_filtered = [point_6_data[index] for index in range(0, len(point_6_data), 2)] # 132 arrays
+
+point_3_x = [pol2cart(point_3_data_filtered[0][index], angle_array[index])[0] for index in range(0, len(point_3_data_filtered[0]))]
+point_3_y = [pol2cart(point_3_data_filtered[0][index], angle_array[index])[1] for index in range(0, len(point_3_data_filtered[0]))]
+
+plt.scatter(point_3_x, point_3_y, color="black")
+
+# Display the plot
+plt.show()

@@ -5,25 +5,35 @@ from itertools import chain
 import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
+from math import pi
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 print(sys.path)
 
-from mte544_lab2 import similarity
+# from similarity 
+import similarity
+import test
 
 class runner:
     def __init__(self):
-        self.map = np.loadtxt('test.txt')
-        self.x_range = [225, 320]
-        self.y_range = [300, 400]
+        self.map = np.loadtxt(r'C:\Users\Riyad\Documents\GitHub\TB4_Autonomous_Robotics\Labs\Lab_2\test.txt')
+        
+        self.pointMap = []
+        # self.x_range = [225, 320]
+        # self.y_range = [300, 400]
+        self.x_range = [110, 150]
+        self.y_range = [250, 300]
         self.probability_grid = []
-        self.particles = 100 #40
+        self.particles = 10000 #40
         self.angle_range = [0, 2 * math.pi]
         self.sensor_range = 50
         self.sensor_fov = math.pi / 2
-        self.iterations = 100
+        self.iterations = 1
         self.offset = 300
+        self.poses = []
+        self.pose_similarities = []
         self.similarity = similarity.similarity()
+        self.position = 0
         self.run()
 
     def pad_map(self):
@@ -178,7 +188,7 @@ class runner:
             x = random.uniform(self.x_range[0], self.x_range[1])
             y = random.uniform(self.y_range[0], self.y_range[1])
             angle = random.uniform(self.angle_range[0], self.angle_range[1])
-            pose = (int(x), int(y), 0)
+            pose = (int(x), int(y), angle)
             poses.append(pose)
         return poses
 
@@ -205,134 +215,83 @@ class runner:
     def getElement(self, arr, row, col):
         return arr[self.offset * 2 * row + col]
 
-    def update_pose_distribution(self, pose_dist):
-        self.probability_grid = []
-        pose_similarities = pose_dist
-        for i in range(0, (self.offset * 2) ** 2):
-            self.probability_grid.append(0)
-        #Generate pose probabilitiy distrobution
-        #pose_sim[1] is location pose_sim[0][0] is similarity
-        width = self.offset
-        for pose_sim in pose_similarities:
-            x = pose_sim[1][0]
-            y = pose_sim[1][1]
-            # index 1d array as 2d
-            if self.getElement(self.probability_grid, y, x) < pose_sim[0]:
-                self.setElement(self.probability_grid, y, x, pose_sim[0])
+    def updatePoseDistribution(self, pose_similarities):
+        weights = []
+        poses = []
+        for pose in pose_similarities:
+            #print(pose)
+            weights.append(pose[0])
+            poses.append(pose[1])
+        poses = random.choices(poses, weights=weights, k=self.particles)
+        return list(set([i for i in poses]))
 
-        # Apply Gaussian blur so not all poses are in the exact same spot
-        # Array out of bounds if used near map edges
-        blurred_grid = self.probability_grid.copy()
-        for i in range(self.offset * 2):
-            for j in range(self.offset * 2):
-                val = self.getElement(self.probability_grid, j, i)
-                if val > 1:
-                    # print(val)
-                    self.setElement(blurred_grid, j, i, val * 4 / 16)
-                    self.setElement(blurred_grid, j + 1, i + 1, val / 16)
-                    self.setElement(blurred_grid, j, i + 1, val * 2 / 16)
-                    self.setElement(blurred_grid, j - 1, i + 1, val / 16)
-                    self.setElement(blurred_grid, j - 1, i, val * 2 / 16)
-                    self.setElement(blurred_grid, j + 1, i - 1, val / 16)
-                    self.setElement(blurred_grid, j, i - 1, val * 2 / 16)
-                    self.setElement(blurred_grid, j - 1, i - 1, val / 16)
-                    self.setElement(blurred_grid, j + 1, i, val * 2 / 16)
-
-        self.probability_grid = blurred_grid
-
-        #For testing
-        test_blur = []
-        for i in range(0, self.offset * 2):
-            test_blur.append([])
-            for j in range(0, self.offset * 2):
-                val = self.getElement(self.probability_grid, j, i)
-                if val > 1:
-                    pass
-                    #print(val)
-                test_blur[i].append(val)
-        #print("Testing blur")
-        # plt.imshow(test_blur)
-        # plt.gray()
-        # plt.show()
-        # quit()
-
+    def loadPointMap(self):
+        print(len(self.map))
+        print(len(self.map[0]))
+        y = 0
+        for row in self.map:
+            x = 0
+            for i in row:
+                if self.map[y][x] < 140:
+                    self.pointMap.append((x, y))
+                x += 1
+            y += 1
     def run(self):
-        self.pad_map()
-        poses = self.getPosesUniform(self.particles)
+        #self.pad_map()
+        self.loadPointMap()
+        self.poses = self.getPosesUniform(self.particles)
         for i in range(0, self.iterations):
-            x = 287 #x = 308
-            y = 329 #
+            # x = 287 #x = 308
+            # y = 329 #
             # x = 308
-            # y = 344
-            pose_similarities = []
-
-            #remove duplicates
-            poses = list(set([i for i in poses]))
+            # y = 348
+            self.pose_similarities = []
 
             #Measure progress
-
-            poses = []
-            poses.append((x,y,0))
-            for pose in poses:
-                #print(pose)
-                plt.plot(pose[0], pose[1], 'ro')
-                #plt.plot(0, 0, 'ro')
-            plt.imshow(self.map)
-            plt.show()
-
             similarities = []
             j = 0
             #quit()
             #0.9967758030280428
             #(287, 329, 0)
-            for pose in poses:
-                #point_grid, search_grid = self.getViewCords((x, y, math.pi / 4))
-                point_grid, search_grid, distances, angles = self.getViewCords(pose)
-                # print(len(distances))
-                # print(distances)
-                # plt.plot(distances)
-                # plt.gray()
-                # plt.show()
-                #For test renders on map
-                # for i in range(0, self.offset * 2):
-                #     for j in range(0, self.offset * 2):
-                #         self.map[i][j] = 254
-                # for point in point_grid:
-                #     self.map[point[1]][point[0]] = 100
-                # for point in search_grid:
-                #     self.map[point[1]][point[0]] = 60
-                # self.map[y][x] = 150
-                # plt.imshow(self.map)
-                # plt.show()
-                # quit()
 
-                # print(len(distances))
-                # print(distances)
-                # print("Here")
-                # print(len(angles))
-                # print(angles)
-                sim = self.similarity.similarity_check(distances, angles, 0, point_grid, pose)
+            for pose in self.poses:
+                sim = self.similarity.similarity_check(self.position, self.pointMap, pose, False, 12)
                 similarities.append(sim)
-                sim_and_pos = (sim, (pose[0], pose[1]))
-                pose_similarities.append(sim_and_pos)
+                sim_and_pos = (sim, pose)
+                self.pose_similarities.append(sim_and_pos)
                 j += 1
-                print(j)
-                #quit()
+                print("Particle: " + str(j) + " Iteration: " + str(i) + " len: " + str(len(self.poses)))
 
             #Plot similarities
-            print(similarities)
-            plt.plot(similarities)
-            plt.gray()
-            plt.show()
-            quit()
+            # print(similarities)
+            # plt.plot(similarities)
+            # plt.gray()
+            # plt.show()
+            # quit()
+            self.poses = self.updatePoseDistribution(self.pose_similarities)
 
-
-            # pose_similarities.append((20, (10, 6)))
-            # pose_similarities.append((80, (10, 6)))
-            # pose_similarities.append((10, (7, 7)))
-            # pose_similarities.append((99, (5, 5)))
-            self.update_pose_distribution(pose_similarities)
-            poses = self.getPoses(self.particles)
-            #poses.extend(self.getPosesUniform(self.particles))
-#
+        weights = []
+        poses = []
+        for pose in self.pose_similarities:
+            weights.append(pose[0])
+            poses.append(pose[1])
+        weight = 99999
+        best_pose = (0,0)
+        i = 0
+        for w in weights:
+            if w <= weight:
+                weight = w
+                best_pose = poses[i]
+            i += 1
+        # best_pose = (150, 250, pi)
+        #1746
+        print(min(weights))
+        print(weight)
+        print(best_pose)
+        # best_pose = (130, 255, 3.66519)
+        # i = 0
+        # while i < 190:
+        #     self.similarity.similarity_check(1, self.pointMap, best_pose, True, i)
+        #     i += 2
+        print(self.similarity.similarity_check(self.position, self.pointMap, best_pose, True, 12))
 runner = runner()

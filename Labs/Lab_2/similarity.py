@@ -6,7 +6,7 @@ from math import cos, sin, sqrt
 # import KDTree library for comparison
 from sklearn.neighbors import KDTree
 # import scan data
-# data is currently in the form of alternating distance arrays 
+# data is currently in the form of alternating distance arrays
 # and intensity arrays
 # scan data for point 3
 from point_3_datascan_formatted import point_3_data_all
@@ -90,14 +90,33 @@ class similarity():
     def distance(self, x1, y1, x2, y2):
         return sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-    def similarity_check(self, simulated_dist, sim_angles, point_toogle: int, simulated_points, robot_pos):
+    # use the transformation matrix to rotate a point
+    def rotation_transform(self, about_point, point_to_rotate, angle):
+        apx, apy = about_point
+        prx, pry = point_to_rotate
+
+        rotatedx = cos(angle)*(prx) - sin(angle)*(pry)
+        rotatedy = sin(angle)*(prx) + cos(angle)*(pry)
+
+        return [rotatedx/0.03, rotatedy/0.03]
+
+    def apply_translation(self, about_point, point_to_rotate, angle):
+        apx, apy = about_point
+        prx, pry = point_to_rotate
+
+        trans_x = prx + apx
+        trans_y = pry + apy
+
+        return [trans_x, trans_y]
+
+    #Robot pos (x,y, rot)
+    def similarity_check(self, point_toogle: int, simulated_points, robot_pos, do_plot):
 
         # x y coordinates for lidar data
-        points = [] 
+        points = []
         if point_toogle == 0:
 
         # setup coordinates for point 3
-
             for index in range(0, len(self.point_3_data_filtered)):
                 point_to_insert = pol2cart(self.point_3_data_filtered[index], angle_array[index])
                 # filter out infinite values
@@ -117,84 +136,29 @@ class similarity():
         for index in range(len(points)):
             lidar_pointcloud_in_cartesian.append(points[index])
 
-        # dist_r = 3
-        # new_data = []
-        # new_point = []
-        # i = 0
-        # for index in self.point_3_data_filtered:
-        #     if index < dist_r:
-        #         new_data.append(index)
-        #         new_point.append(point_3_x[i])
-        #     i += 1
-        #         #self.point_3_data_filtered.remove(index)
-        # self.point_3_data_filtered = new_data
-        # point_3_x = new_point
 
-        # new_data = []
-        # new_point = []
-        # i = 0
-        # for index in self.point_3_data_filtered:
-        #     if index < dist_r:
-        #         new_data.append(index)
-        #         new_point.append(point_3_y[i])
-        #     i += 1
-        #     # self.point_3_data_filtered.remove(index)
-        # self.point_3_data_filtered = new_data
-        # point_3_y = new_point
+        # rotate all points in map abour the robot pose
+        rotated_lidar_points = []
+        about_point = (robot_pos[0], robot_pos[1])
+        for points in lidar_pointcloud_in_cartesian:
+            rotated_lidar_points.append(self.rotation_transform(about_point, points, robot_pos[2]))
 
-        # print(len(self.point_3_data_filtered))
-        # print(len(self.point_6_data_filtered))
-        #662
-        #664
+        translated_lider_points = []
+        about_point = (robot_pos[0], robot_pos[1])
+        for points in rotated_lidar_points:
+            translated_lider_points.append(self.apply_translation(about_point, points, robot_pos[2]))
 
-        #Calculate distance from points
-
-        #Distance conversion already happening in point_der_dist
-        # point_der_dist = []
-        # for point in simulated_points:
-        #     point_der_dist.append(self.distance(point[0], point[1], robot_pos[0], robot_pos[1])*resolution)
-
-        # new_data = []
-        # point_sim_x_dir = []
-        # point_sim_y_dir = []
-        # i = 0
-        # for dist in point_der_dist:
-        #     if dist < 3 and dist > range_min:
-        #         new_data.append(dist)
-        #         point_sim_x_dir.append(resolution * (simulated_points[i][0] - robot_pos[0]))
-        #         point_sim_y_dir.append(resolution * (simulated_points[i][1] - robot_pos[1]))
-        #     i += 1
-        # point_der_dist = new_data
-
-        #print(point_der_dist)
-
-        # pixel_distances = [pixel_2_m(point_der_dist[index_num], resolution) for index_num in range(0, len(point_der_dist))]
-        # point_der_dist = pixel_distances
-        # if point_toogle == 0:
-        #     # if 0 use data from point 3
-        #     comparison_hist = self.point_3_np_hist
-        # elif point_toogle == 1:
-        #     # else if not 0 use from point 6
-        #     comparison_hist = self.point_6_np_hist
-
-        # convert the simulated data into a histogram dataset
-        # simulated_hist, _ = np.histogram(point_der_dist, "auto")
-
-        # find the norms of each set
-        # print(simulated_hist)
-        # simulated_norm = np.linalg.norm(simulated_hist)
-        # comparison_norm = np.linalg.norm(comparison_hist)
+        rotated_lidar_points = translated_lider_points
 
         # Scatter plot
-        # print("Here to")
-        # print(len(sim_angles))
-        # print(len(point_der_dist))
-        # plt.scatter(point_der_dist, sim_angles, color="blue")
-        # plt.scatter(self.point_3_data_filtered, angle_array, color="red")
-
-        # point_sim_x = [pol2cart(point_der_dist[index], sim_angles[index])[0] for index in range(0, len(point_der_dist))]
-        # point_sim_y = [pol2cart(point_der_dist[index], sim_angles[index])[1] for index in range(0, len(point_der_dist))]
-        # plt.scatter(point_sim_x, point_sim_y, color="blue")
+        if do_plot:
+            plt.scatter([i[0] for i in rotated_lidar_points],[i[1] for i in rotated_lidar_points], color="blue")
+            plt.scatter([i[0] for i in simulated_points], [i[1] for i in simulated_points], color="red")
+            # plt.xlim(-5, 6)
+            # plt.ylim(-10, 15)
+            # plt.xlim(-1000, 1000)
+            # plt.ylim(-1000, 1000)
+            plt.show()
 
         #Debug plots
 
@@ -211,12 +175,12 @@ class similarity():
         #     plt.scatter(point_sim_x_dir, point_sim_y_dir, color="red")
         #     plt.show()
 
-        # x, y points of the map in cartesian 
-        occupied_points_of_the_map_in_cartesian = simulated_points
-        kdt = KDTree(occupied_points_of_the_map_in_cartesian)
-        distances = kdt.query(lidar_pointcloud_in_cartesian, k=1)[0][:]
+        # x, y points of the map in cartesian
+        # occupied_points_of_the_map_in_cartesian = rotated_sim_points
+        kdt = KDTree(np.array(simulated_points))
+        distances = kdt.query(rotated_lidar_points, k=1)[0][:]
         # weight= np.sum (np.exp(-(distances**2)/(2*lidar_standard_deviation**2)))
-        #  OR 
+        #  OR
         # around 0.2 from here https://piazza.com/class/l66otfiv2xt5h2/post/156
         # Thanks Ahmad
         lidar_standard_deviation=0.2
@@ -249,8 +213,7 @@ for index in range(0, len(set_6)):
 
 # p3_norm = np.histogram(p3, 10)
 
-similarity_test = similarity()
-similarity_test_result = similarity_test.similarity_check([], [], 1, p6, [])
+# similarity_test = similarity()
+# similarity_test_result = similarity_test.similarity_check([], [], 0, p6, [])
 
-print(similarity_test_result)
-
+# print(similarity_test_result)
