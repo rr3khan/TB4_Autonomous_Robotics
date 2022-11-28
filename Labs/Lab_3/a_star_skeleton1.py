@@ -55,6 +55,13 @@ def astar(maze, start, end):
         # Complete here code to generate children, which are the neighboring nodes. You should use 4 or 8 points connectivity for a grid.
         children = []
 
+        # Check each child node of the coordinate, if its not blocked or out of bounds add it to 
+        # list of children nodes
+        # currently checks 4 nieghbors, TODO update to check 8
+        for node in [cal_right(current_node), cal_down(current_node), cal_left(current_node), cal_up(current_node)]:
+            if  not check_blocked(current_node) and not check_backrooms(current_node):
+                children.append(current_node)
+
         # Loop through children to update the costs
         for child in children:
             # Child is on the closed list
@@ -63,12 +70,75 @@ def astar(maze, start, end):
                     break
             else:
                 # Create the f, g, and h values, replace the 0s with appropriate formulations of the costs
-                child.g = 0
-                child.h = 0
-                child.f = 0
+                child.g = g_distanced_travelled(path)
+                child.h = h_dist_to_goal(child, end_node.position)
+                child.f = child.g + child.h
 
                 # Complete here code to check whether to add a child to the open list
                 open_list.append(child)
+
+# A Star helper functions
+
+        # To move to the right increment x coordinate only
+        
+        def cal_right(coord: list) -> list:
+            return [coord[0] + 1, coord[1]]
+
+        # To move to the left decrement x coordinate only
+
+        def cal_left(coord) -> list:
+            return [coord[0] - 1, coord[1]]
+
+        # To move up increment y coordinate only
+
+        def cal_up(coord) -> list:
+            return [coord[0], coord[1] + 1]
+
+        # To move down decrement y coordinate only
+
+        def cal_down(coord) -> list:
+            return [coord[0], coord[1] - 1]
+
+    def check_blocked(self, potential_next_move) -> bool:
+        if self.map[potential_next_move[1]][potential_next_move[0]] == 1:
+            # code map is flipped i.e in terms of y then x ccordinates
+            # print("Coordinate readings", potential_next_move[0], potential_next_move[1]  )
+            # print("Map reading: ", self.map[potential_next_move[0]][potential_next_move[1]] )
+            # print(potential_next_move , " is blocked!")
+            return True
+        else:
+            return False
+
+     # check to make sure we do not go out of bounds of map
+    # out of bounds would be if either x or y coordinate of next move
+    # is negative or > map length or map width
+    def check_backrooms(self, potential_next_move, map) -> bool:
+        ## try will only catch > len(map) and not negative numbers
+        try:
+            self.map[potential_next_move[1]][potential_next_move[0]]
+        except:
+            # print("Out of Bounds!")
+            return True
+
+        if potential_next_move[0] < 0 or potential_next_move[1] < 0  or potential_next_move[0] > len(map) or potential_next_move[1] > len(map):
+            # print("Out of Bounds!")
+            return True
+        else:
+            return False
+
+   # define the evaluation functions here used for A * Search
+   # calculated distance to goal
+   # This currently uses manhattan distance to do replace with something else that
+   # is better for 8 neighbours     
+
+    def h_dist_to_goal(node, goal) -> int:
+        # Using manhattan distance
+        # Find manhattan distance estimate as difference between x and y
+        # coordinates
+        return abs(node[0] - goal[0]) + abs(node[1] - goal[1])
+
+    def g_distanced_travelled(self, path):
+        return len(path)
 
 def main():
 
