@@ -2,36 +2,24 @@ import sys
 from Queue import PriorityQueue
 #import PriorityQueue
 from math import sqrt
-
+from cost_map_no_postbox import cost_map_data
+import numpy as np
 import treelib
 import pygame
 from treelib import Tree
 
-maze = [[0,   0,   0,   0,   1,   0, 0, 0, 0, 0],
-            [0, 0.8,   1,   0,   1,   0, 0, 0, 0, 0],
-            [0, 0.9,   1,   0,   1,   0, 1, 0, 0, 0],
-            [0,   1,   0,   0,   1,   0, 1, 0, 0, 0],
-            [0,   1,   0,   0,   1,   0, 0, 0, 0, 0],
-            [0,   0,   0, 0.9,   0,   1, 0, 0, 0, 0],
-            [0,   0, 0.9,   1,   1, 0.7, 0, 0, 0, 0],
-            [0,   0,   0,   1,   0,   0, 0, 0, 0, 0],
-            [0,   0,   0,   0, 0.9,   0, 0, 0, 0, 0],
-            [0,   0,   0,   0,   0,   0, 0, 0, 0, 0]]
-
 moves = 1000
 cost = 0
-width = len(maze[0]) - 1
-height = len(maze) - 1
-
 #In render y is given x and x is y
 
-exit1 = (8, 4)
-start = (5, 2)
+exit1 = (180, 120)
+start = (30, 20)
 
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 600
 BLACK = (0, 0, 0)
 WHITE = (200, 200, 200)
+GRAY = (112, 128, 144)
 GREEN = (0, 200, 0)
 RED = (200, 0, 0)
 BLUE = (0, 0, 200)
@@ -45,34 +33,44 @@ class runner:
         self.totalExplored = 0
         self.cost = -1 #-1 so as not to account for startinh tile
         self.queue = []
-        self.scale = 1
+        self.scale = 0.05
         self.priorityQueue = PriorityQueue()
         self.done = False
         self.path = []
+        self.maze = []
+        self.showPath = False
         self.tree = Tree()
+        self.width = 310
+        self.height = 195
         print("Running")
         self.map_to_int()
+        print(len(self.maze))
+        print(len(self.maze[0]))
         self.projectLoop()
 
+
     def map_to_int(self):
-        for i in range(0, len(maze)):
-            for j in range(0, len(maze[i])):
-                # print maze[i][j]
-                # print maze[i]
-                maze[i][j] = int(255*maze[i][j])
+        # for i in range(0, height):
+        #     self.maze.append([])
+        #     for j in range(0, width):
+        #         self.maze[i].append(int(self.getElement(cost_map_data,j,i)))
+        self.maze = np.array(cost_map_data).reshape(-1, 310).tolist()
 
     def get_map_cords(self, x, y):
-        return y,width-x
+        return y,self.width-x
 
     def drawGrid(self):
-        blockSize = 20  # Set the size of the grid block
-        for x in range(0, width):
-            for y in range(0, height):
+        blockSize = 2  # Set the size of the grid block
+        for x in range(0, self.width):
+            for y in range(0, self.height):
                 x_ = self.get_map_cords(x, y)[0]
                 y_ = self.get_map_cords(x, y)[1]
                 rect = pygame.Rect(x_ * blockSize, y_ * blockSize, blockSize, blockSize)
-                Color = (0, 0, maze[x][y])
-                pygame.draw.rect(SCREEN, Color, rect, 1)
+                Color = (0, 0, self.maze[y][x])
+                if self.maze[y][x] == 100:
+                    pygame.draw.rect(SCREEN, GRAY, rect, 1)
+                else:
+                    pygame.draw.rect(SCREEN, Color, rect, 1)
                 if start[0] == x and start[1] == y:
                     pygame.draw.rect(SCREEN, WHITE, rect, 1)
                 elif exit1[0] == x and exit1[1] == y:
@@ -80,7 +78,8 @@ class runner:
                 elif (x, y) in self.path:
                     pygame.draw.rect(SCREEN, RED, rect, 1)
                 elif (x, y) in self.explored:
-                    pygame.draw.rect(SCREEN, PURPLE, rect, 1)
+                    if self.showPath:
+                        pygame.draw.rect(SCREEN, PURPLE, rect, 1)
 
     def projectLoop(self):
         global SCREEN, CLOCK
@@ -134,7 +133,8 @@ class runner:
                 #
                 x = new_position[0]
                 y = new_position[1]
-                cost = int(node.tag) + int(self.distance(new_position, (x,y))) + int(maze[y][x]*self.scale)
+                #print("X: " + str(x) + " Y:" + str(y))
+                cost = int(node.tag) + int(self.distance(new_position, (x,y))) + int(self.maze[y][x]*self.scale)
                 revisit = False
                 if new_position in self.visited:
                     if self.visitedCost[new_position] > cost:
@@ -169,9 +169,13 @@ class runner:
         return moves
 
     def canMove(self, position):
-        # Maze x and y axises are flipped
-        return not (position[0] < 0 or position[0] >= width or position[1] < 0 or position[1] >= height
-                    or maze[position[0]][position[1]] >= 254)
-
+        x = position[0]
+        y = position[1]
+        #print("X: " + str(x) + " Y:" + str(y) + " H: " + str(self.height))
+        # self.maze x and y axises are flipped
+        inBounds = not (x < 0 or x >= self.width or y < 0 or y >= self.height)
+        if inBounds:
+            return self.maze[y][x] < 100
+        return inBounds
 
 runner = runner()
