@@ -38,7 +38,7 @@ class runner:
         self.done = False
         self.path = []
         self.maze = []
-        self.showPath = False
+        self.showPath = True
         self.tree = Tree()
         self.width = 310
         self.height = 195
@@ -47,7 +47,6 @@ class runner:
         print(len(self.maze))
         print(len(self.maze[0]))
         self.projectLoop()
-
 
     def map_to_int(self):
         # for i in range(0, height):

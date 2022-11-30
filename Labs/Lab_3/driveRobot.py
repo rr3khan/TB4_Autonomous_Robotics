@@ -18,6 +18,7 @@ class robotDriver():
 		self.targetPose = Pose()
 		self.targetPose.x = 2
 		self.targetPose.y = 2
+		self.
 	   
 	def update_pose(self, data):
 	
@@ -33,21 +34,33 @@ class robotDriver():
 		return AddTwoIntsResponse(0)
 
 	def getAngleError(self):
-		e_x =
+		x_error = self.targetPose.x - self.pose.x
+		y_error = self.targetPose.y - self.pose.y
+		dist = sqrt(x_error**2 + y_error**2)
+		norm_x = x_error/dist
+		norm_y = y_error/dist
+		return atan2(norm_y, norm_x)
+
+	def getDistanceError(self):
+		x_error = self.targetPose.x - self.pose.x
+		y_error = self.targetPose.y - self.pose.y
+		dist = sqrt(x_error**2 + y_error**2)
+		return dist
 
 	def drive(self):
 		while not rospy.is_shutdown():
 			vel_msg = Twist()
-			k = 1
+			k_forward = 1
+			k_angle = 1
 			x_error = self.targetPose.x - self.pose.x
 			y_error = self.targetPose.y - self.pose.y
 			rospy.loginfo(x_error)
-			vel_msg.linear.x = x_error*k
-			vel_msg.linear.y = y_error*k
-			vel_msg.linear.z = 0
-			vel_msg.angular.x = 0
-			vel_msg.angular.y = 0
-			vel_msg.angular.z = 0
+			vel_msg.linear.x = self.getDistanceError()*k_forward
+			#vel_msg.linear.y = y_error*k
+			#vel_msg.linear.z = 0
+			#vel_msg.angular.x = 0
+			#vel_msg.angular.y = 0
+			vel_msg.angular.z = self.getAngleError()*k_angle
 			rate = rospy.Rate(1)    
 			self.pub.publish(vel_msg)
 			rate.sleep()
