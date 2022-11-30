@@ -5,13 +5,19 @@ from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 from math import pow, atan2, sqrt
 import time
+from tf2_msgs.msg import TFMessage
+# print("TESTING")
 class MinimalPublisher(Node):
     def _init_(self):
-        super()._init_('minimal_publisher')
+        super().__init__('minimal_publisher')
+        print("Testing before vel publisher")
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.pose_subscriber = self.create_subscription(Pose, '/odom', self.update_pose, 10)
+        # self.pose_subscriber = self.create_subscription(TFMessage, 'tf', self.update_pose, 10) # works for tf
         timer_period = 0.5  # seconds
-        self.timer = self.create_timer(timer_period, self.drive)
+        # self.timer = self.create_timer(timer_period, self.drive)
+        print("Testing before timer")
+        self.timer = self.create_timer(timer_period, self.testing_move_line)
         self.pose = Pose()
         self.targetPose = Pose()
         self.initialPose = Pose()
@@ -28,6 +34,7 @@ class MinimalPublisher(Node):
         self.targetPose.y = self.targets[0][1]
 
     def update_pose(self, data):
+        print("Pose testing", data)
         self.pose = data
         self.pose.x = round(self.pose.x, 4)
         self.pose.y = round(self.pose.y, 4)
@@ -73,15 +80,27 @@ class MinimalPublisher(Node):
         vel_msg.angular.y = 0.0
         vel_msg.angular.z = self.getAngleError() * k_angle
         self.pub.publish(vel_msg)
+    
+    def testing_move_line(self):
+        vel_msg = Twist()
+        vel_msg.linear.x = 0.2
+        # vel_msg.linear.y = 0.2
+        #vel_msg.angular.z = -0.5
+        self.pub.publish(vel_msg)
 
 def main(args=None):
     rclpy.init(args=args)
-    minimal_publisher = MinimalPublisher()
-    rclpy.spin(minimal_publisher)
+    minimal_publisher = MinimalPublisher("Controller_Node")
+    # rclpy.spin(minimal_publisher)
+    # while (True):
+    #     # Tmover.draw_square_forever()
+    #     # driver.move_circle()
+    #     minimal_publisher.drive()
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_publisher.destroy_node()
+    # minimal_publisher.destroy_node()
+    rclpy.spin(minimal_publisher)
     rclpy.shutdown()
-if __name__ == '_main_':
+if __name__ == '__main__':
     main()
