@@ -20,6 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'map_sub_node = lab_3_package.mp_sub:main',
+            'drive_testing = lab_3_package.drive_robot:main',
+            'robot_controller = lab_3_package.robotController:main'
         ],
     },
 )
