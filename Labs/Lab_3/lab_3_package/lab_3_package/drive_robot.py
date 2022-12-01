@@ -43,6 +43,7 @@ class Driver(Node):
         # self.timer = self.create_timer(0.5, self.drive)
         # self.Driver 
         self.flag = False
+        self.LoadedFlag = False
         # subscribe to the cost map
         # from this post best effort is the safest option to go with
         # https://piazza.com/class/l66otfiv2xt5h2/post/176
@@ -71,7 +72,7 @@ class Driver(Node):
         # self.pose_subscriber = self.create_subscription(Pose, '/odom', self.update_pose, 10)
         # self.pose_subscriber = self.create_subscription(TFMessage, 'tf', self.update_pose, 10) # works for tf
         timer_period = 0.5  # seconds
-        # self.timer = self.create_timer(timer_period, self.drive)
+        self.timer = self.create_timer(timer_period, self.drive)
         # self.timer = self.create_timer(timer_period, self.debug_logger)
         # self.timer = self.create_timer(timer_period, self.update_current_pose)
         # print("Testing before timer")
@@ -128,11 +129,16 @@ class Driver(Node):
 
         # if self.startPos.x == 0.0: 
         # setup Astar Path Planner
-        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np.array(self.costmap_vector).reshape(-1, self.width).tolist())
+        self.get_path()
+
+
+    def get_path(self):
+        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height,
+                                                     np.array(self.costmap_vector).reshape(-1, self.width).tolist())
 
         # find path pixel coordinates must be integres
-        start_px = self.dist_2_px((self.startPos.x,self.startPos.y), [0,0])
-        goal_px = self.dist_2_px((self.goalPose.x,self.startPos.y), [0,0])
+        start_px = self.dist_2_px((self.startPos.x, self.startPos.y), [0, 0])
+        goal_px = self.dist_2_px((self.goalPose.x, self.startPos.y), [0, 0])
         pixel_path = astar_path_planner.findPath(start_px, goal_px)
 
         # convert all pixel distances in map array to distance
@@ -142,7 +148,6 @@ class Driver(Node):
         self.targetPose.x = float(self.targets[0][0])
         self.targetPose.y = float(self.targets[0][1])
 
-    
     def costmap_callback(self, costmap_msg):
         # load the cost mapdata from the subscription
         print("Printing map:")
@@ -276,6 +281,14 @@ class Driver(Node):
         return dist
 
     def drive(self):
+        if self.startPos.x == 0.0:
+            print("Watiing for pose")
+            self.update_pose()
+            return
+        elif not self.LoadedFlag:
+            self.get_path()
+            self.LoadedFlag = True
+
         self.update_pose()
         self.is_at_target()
         vel_msg = Twist()
@@ -289,7 +302,7 @@ class Driver(Node):
         vel_msg.angular.x = 0.0
         vel_msg.angular.y = 0.0
         vel_msg.angular.z = self.getAngleError() * k_angle
-        self.vel_publisher .publish(vel_msg)
+        self.vel_publisher.publish(vel_msg)
         # debug testing
         # self.get_logger().info(f"Current Pose: [{self.pose.x:.3f},{self.pose.y:.3f},{self.pose.theta:.3f}]")
     

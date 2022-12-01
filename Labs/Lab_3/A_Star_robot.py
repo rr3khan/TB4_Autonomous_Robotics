@@ -1,13 +1,7 @@
 import sys
 from Queue import PriorityQueue
 from math import sqrt
-from cost_map_no_postbox import cost_map_data
-import numpy as np
-import pygame
 from treelib import Tree
-
-moves = 1000
-cost = 0
 
 #runner = runner(310, 195, np.array(cost_map_data).reshape(-1, 310).tolist())
 
@@ -31,7 +25,7 @@ class Pathfinder:
         print("Running")
         self.maze = mapData
         self.showPath = True
-        self.findPath((30, 20),(180, 120))
+        self.findPath((30, 20),(70, 70))
 
     def get_map_cords(self, x, y):
         return y,self.width-x

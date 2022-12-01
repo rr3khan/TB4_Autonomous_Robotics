@@ -6,8 +6,6 @@ import numpy as np
 import pygame
 from treelib import Tree
 
-moves = 1000
-cost = 0
 #In render y is given x and x is y
 
 WINDOW_HEIGHT = 600
@@ -39,7 +37,7 @@ class runner:
         print("Running")
         self.maze = mapData
         self.showPath = True
-        self.findPath((30, 20),(180, 120))
+        self.findPath((30, 20),(160, 120))
 
     def get_map_cords(self, x, y):
         return y,self.width-x
@@ -85,12 +83,12 @@ class runner:
         SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         CLOCK = pygame.time.Clock()
         SCREEN.fill(BLACK)
+
+        node = self.tree.create_node(tag='0', data=self.startPosition)
+        self.a_star(self.startPosition, node)
+        print(self.path)
+
         while True:
-            if not self.done:
-                #A*
-                node = self.tree.create_node(tag='0', data=self.startPosition)
-                self.a_star(self.startPosition, node)
-                print(self.path)
             self.drawGrid()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
