@@ -118,18 +118,6 @@ class Driver(Node):
         #     print("pose y:", self.pose.y)
         #     self.timer_initial = self.create_timer(1, self.initialise())
         #     return
-        
-        self.startPos = self.pose
-        print("Start pose x:", self.startPos.x)
-        print("Start pose y:", self.startPos.y)
-
-        # Get the input from the user.
-        self.goalPose.x = float(input("Set your x goal: "))
-        self.goalPose.y = float(input("Set your y goal: "))
-
-        # if self.startPos.x == 0.0: 
-        # setup Astar Path Planner
-        self.get_path()
 
 
     def get_path(self):
