@@ -1,19 +1,14 @@
 import sys
 from Queue import PriorityQueue
-#import PriorityQueue
 from math import sqrt
 from cost_map_no_postbox import cost_map_data
 import numpy as np
-import treelib
 import pygame
 from treelib import Tree
 
 moves = 1000
 cost = 0
 #In render y is given x and x is y
-
-exit1 = (180, 120)
-start = (30, 20)
 
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 600
@@ -26,34 +21,25 @@ BLUE = (0, 0, 200)
 PURPLE = (200, 0, 200)
 
 class runner:
-    def __init__(self):
+    def __init__(self, width, height, mapData):
         self.visited = set()
         self.explored = set()
         self.visitedCost = {}
         self.totalExplored = 0
         self.cost = -1 #-1 so as not to account for startinh tile
         self.queue = []
-        self.scale = 0.05
         self.priorityQueue = PriorityQueue()
         self.done = False
         self.path = []
         self.maze = []
-        self.showPath = True
         self.tree = Tree()
-        self.width = 310
-        self.height = 195
+        self.width = width
+        self.height = height
+        self.scale = 0.05
         print("Running")
-        self.map_to_int()
-        print(len(self.maze))
-        print(len(self.maze[0]))
-        self.projectLoop()
-
-    def map_to_int(self):
-        # for i in range(0, height):
-        #     self.maze.append([])
-        #     for j in range(0, width):
-        #         self.maze[i].append(int(self.getElement(cost_map_data,j,i)))
-        self.maze = np.array(cost_map_data).reshape(-1, 310).tolist()
+        self.maze = mapData
+        self.showPath = True
+        self.findPath((30, 20),(180, 120))
 
     def get_map_cords(self, x, y):
         return y,self.width-x
@@ -70,9 +56,9 @@ class runner:
                     pygame.draw.rect(SCREEN, GRAY, rect, 1)
                 else:
                     pygame.draw.rect(SCREEN, Color, rect, 1)
-                if start[0] == x and start[1] == y:
+                if self.startPosition[0] == x and self.startPosition[1] == y:
                     pygame.draw.rect(SCREEN, WHITE, rect, 1)
-                elif exit1[0] == x and exit1[1] == y:
+                elif self.endPosition[0] == x and self.endPosition[1] == y:
                     pygame.draw.rect(SCREEN, GREEN, rect, 1)
                 elif (x, y) in self.path:
                     pygame.draw.rect(SCREEN, RED, rect, 1)
@@ -80,7 +66,20 @@ class runner:
                     if self.showPath:
                         pygame.draw.rect(SCREEN, PURPLE, rect, 1)
 
-    def projectLoop(self):
+    def findPath(self, startPos, endPos):
+        #Reset global vars
+        self.visited = set()
+        self.explored = set()
+        self.visitedCost = {}
+        self.totalExplored = 0
+        self.cost = -1  # -1 so as not to account for startinh tile
+        self.queue = []
+        self.priorityQueue = PriorityQueue()
+        self.done = False
+        self.path = []
+        self.tree = Tree()
+        self.endPosition = endPos
+        self.startPosition = startPos
         global SCREEN, CLOCK
         pygame.init()
         SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -89,8 +88,8 @@ class runner:
         while True:
             if not self.done:
                 #A*
-                node = self.tree.create_node(tag='0', data=start)
-                self.a_star(start, node)
+                node = self.tree.create_node(tag='0', data=self.startPosition)
+                self.a_star(self.startPosition, node)
                 print(self.path)
             self.drawGrid()
             for event in pygame.event.get():
@@ -113,13 +112,13 @@ class runner:
         self.visited.add(position)
         self.visitedCost[position] = int(node.tag)
         #Priority queue is order based on first object
-        self.priorityQueue.put((self.manhattan_distance(position, exit1), position, node))
+        self.priorityQueue.put((self.manhattan_distance(position, self.endPosition), position, node))
         previous_node = node
         while self.priorityQueue.qsize() > 0 and not self.done:
             distance, position, node = self.priorityQueue.get()
             self.totalExplored += 1
             self.explored.add(position)
-            if (position == exit1):
+            if (position == self.endPosition):
                 print("Found")
                 self.get_tree(node)
                 print(position)
@@ -142,7 +141,7 @@ class runner:
                     new_node = self.tree.create_node(tag='' + str(cost), data=new_position, parent=node)
                     self.visited.add(new_position)
                     self.visitedCost[new_position] = int(node.tag)
-                    self.priorityQueue.put((self.manhattan_distance(new_position, exit1) + cost, new_position, new_node))
+                    self.priorityQueue.put((self.manhattan_distance(new_position, self.endPosition) + cost, new_position, new_node))
 
     def distance(self, point1, point2):
         return sqrt((point1[0]-point2[0])**2 + (point1[1]-point2[1])**2)
@@ -177,4 +176,4 @@ class runner:
             return self.maze[y][x] < 100
         return inBounds
 
-runner = runner()
+runner = runner(310, 195, np.array(cost_map_data).reshape(-1, 310).tolist())
