@@ -135,7 +135,9 @@ class Driver(Node):
         # find path pixel coordinates must be integres
 
         start_px = self.dist_2_px((self.startPos.x, self.startPos.y), [0, 0])
-        goal_px = self.dist_2_px((self.goalPose.x, self.startPos.y), [0, 0])
+        goal_px = self.dist_2_px((self.goalPose.x, self.goalPose.y), [0, 0])
+        print("Start dist", self.startPos.x, self.startPos.y)
+        print("Goal ddist", self.goalPose.x, self.goalPose.y)
         print("Start px", start_px)
         print("Goal px", goal_px)
         pixel_path = astar_path_planner.findPath(start_px, goal_px)
@@ -165,6 +167,9 @@ class Driver(Node):
     def dist_2_px(self, coordinate, origin):
         px = round((coordinate[0] - self.origin[0])/(self.resolution))
         py = round((coordinate[1] - self.origin[1])/(self.resolution))
+
+        print("Pixel px:", px)
+        print("Pixel py:", py)
 
         return (px, py)
 
