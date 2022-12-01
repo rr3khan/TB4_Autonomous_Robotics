@@ -6,13 +6,20 @@ from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 import time
 
-from math import pow, atan2, sqrt
+from math import pow, atan2, sqrt, asin
 from nav_msgs.msg import OccupancyGrid
 from nav2_simple_commander.robot_navigator import BasicNavigator
 # , NavigationResult # Helper module
 # from robot_navigator import BasicNavigator, NavigationResult # Helper module
 from geometry_msgs.msg import PoseStamped # Pose with ref frame and timestamp
 from tf2_msgs.msg import TFMessage
+# quality of service for the map
+from rclpy.qos import ReliabilityPolicy, QoSProfile
+# imports for frame transformations
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from tabnanny import check
 
 class Driver(Node):
     def __init__(self):
@@ -26,17 +33,33 @@ class Driver(Node):
         # testing with turtlesim
         # self.pose_sub = self.create_subscription(Pose, '/turtle1/pose', self.update_pose, 10)
         self.pose = Pose()
-        self.timer = self.create_timer(0.5, self.drive)
+        self.curr_pose = Pose()
+        self.timer = self.create_timer(0.5, self.update_current_pose)
         # self.Driver 
         self.flag = False
+        # subscribe to the cost map
+        # from this post best effort is the safest option to go with
+        # https://piazza.com/class/l66otfiv2xt5h2/post/176
+        self.costmap_sub = self.create_subscription(OccupancyGrid, '/global_costmap/costmap', self.costmap_callback, QoSProfile(depth=300, reliability=ReliabilityPolicy.BEST_EFFORT))
+        # map variables fromo map yaml file
+        self.mode='trinary'
+        self.resolution=0.05
+        self.origin=[-5.75, -3.72, 0]
+        self.negate=0
+        self.occupied_thresh=0.65
+        self.free_thresh=0.25
+
+        
+        
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.pose_subscriber = self.create_subscription(Pose, '/odom', self.update_pose, 10)
+        # subscribing to odom is not going to work we need to do some transformations
+        # self.pose_subscriber = self.create_subscription(Pose, '/odom', self.update_pose, 10)
         # self.pose_subscriber = self.create_subscription(TFMessage, 'tf', self.update_pose, 10) # works for tf
         timer_period = 0.5  # seconds
         # self.timer = self.create_timer(timer_period, self.drive)
         # print("Testing before timer")
-        self.timer = self.create_timer(timer_period, self.drive)
-        self.pose = Pose()
+        # self.timer = self.create_timer(timer_period, self.drive)
+        self.pose = Pose() # pose of robot
         self.targetPose = Pose()
         self.initialPose = Pose()
         self.target_index = 0
@@ -48,9 +71,81 @@ class Driver(Node):
         self.timeConsts = [3, 1.95]
         self.timerVal = time.time()
 
+        # Credit to tf  listener tutorial https://docs.ros.org/en/galactic/Tutorials/Intermediate/Tf2/Writing-A-Tf2-Listener-Py.html#write-the-listener-node
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
     def initialise(self):
         self.targetPose.x = self.targets[0][0]
         self.targetPose.y = self.targets[0][1]
+
+    
+    def costmap_callback(self, costmap_msg):
+        # load the cost mapdata from the subscription
+
+        self.origin = [costmap_msg.info.origin.position.x, costmap_msg.info.origin.position.y]
+        self.height = costmap_msg.info.height
+        self.width = costmap_msg.info.width
+        self.resolution = costmap_msg.info.resolution
+    
+    # takes a distance x y coordinate and converts it to a pixel location
+    def dist_2_px(self, coordinate, origin):
+        px = round((coordinate[0] - origin[0])/(self.resolution))
+        py = round((coordinate[1] - origin[1])/(self.resolution))
+
+        return (px, py)
+
+    
+    # helper function to convert a quaternion to euler form
+    # credit to https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
+    def euler_from_quaternion(self, x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = atan2(t0, t1)
+     
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = asin(t2)
+     
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = atan2(t3, t4)
+     
+        return roll_x, pitch_y, yaw_z # in radians
+    
+    # get current pose by transforming base frame to map frame
+    def update_current_pose(self):
+
+
+        from_frame_rel = 'base_footprint'
+        to_frame_rel = 'map'
+
+        try:
+            t = self.tf_buffer.lookup_transform(
+                to_frame_rel,
+                from_frame_rel,
+                rclpy.time.Time())
+            
+            self.curr_pose.x = t.transform.translation.x
+            self.curr_pose.y = t.transform.translation.y
+            map_rotation = t.transform.rotation
+            _, _, self.curr_pose.theta = self.euler_from_quaternion(map_rotation.x, map_rotation.y, map_rotation.z,map_rotation.w  )
+
+            # debug testing
+            self.get_logger().info(f"Current Pose: [{self.curr_pose.x:.3f},{self.curr_pose.y:.3f},{self.curr_pose.theta:.3f}]")
+
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            return
+
 
     def update_pose(self, data):
         print("Pose testing", data)
@@ -288,11 +383,9 @@ def main(args=None):
     print("testing testing")
     rclpy.init(args=args)
     driver = Driver()
-    # driver.move_circle()
     # driver.stop()
     # while (True):
     #     # Tmover.draw_square_forever()
-    #     # driver.move_circle()
     #     driver.move_line()
     # driver.move2goal()
     # maper.log()
