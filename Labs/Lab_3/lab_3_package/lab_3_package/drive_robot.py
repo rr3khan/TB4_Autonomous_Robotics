@@ -105,9 +105,13 @@ class Driver(Node):
     #  in the initialization call the Astar module and calculate the path needed
 
     def initialise(self):
+        
 
+        # Get the input from the user.
+        self.goalPose.x = float(input("Set your x goal: "))
+        self.goalPose.y = float(input("Set your y goal: "))
         # Initialize starting position based on transform data
-        self.startPos = self.pose
+        # self.startPos = self.pose
         # if self.startPos.x == 0.0: 
         #     print("Watiing for pose")
         #     # self.update_current_pose()
@@ -121,18 +125,28 @@ class Driver(Node):
 
 
     def get_path(self):
-        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height,
-                                                     np.array(self.costmap_vector).reshape(-1, self.width).tolist())
+        print("width:", self.width)
+        print("height", self.height)
+        np_map = np.array(self.costmap_vector).reshape(-1, self.width).tolist()
+        # print("NP map:", np_map)
+        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np_map
+                                                     )
 
         # find path pixel coordinates must be integres
+
         start_px = self.dist_2_px((self.startPos.x, self.startPos.y), [0, 0])
         goal_px = self.dist_2_px((self.goalPose.x, self.startPos.y), [0, 0])
+        print("Start px", start_px)
+        print("Goal px", goal_px)
         pixel_path = astar_path_planner.findPath(start_px, goal_px)
+        print("Pixel path:", pixel_path)
+
 
         # convert all pixel distances in map array to distance
         for index, pixel_coord in enumerate(pixel_path):
             self.targets.append((self.px_2_dist(pixel_coord, [0, 0])))
 
+        print("Targets are:", self.targets)
         self.targetPose.x = float(self.targets[0][0])
         self.targetPose.y = float(self.targets[0][1])
 
@@ -149,16 +163,16 @@ class Driver(Node):
     
     # takes a distance x y coordinate and converts it to a pixel location
     def dist_2_px(self, coordinate, origin):
-        px = round((coordinate[0] - origin[0])/(self.resolution))
-        py = round((coordinate[1] - origin[1])/(self.resolution))
+        px = round((coordinate[0] - self.origin[0])/(self.resolution))
+        py = round((coordinate[1] - self.origin[1])/(self.resolution))
 
         return (px, py)
 
     def px_2_dist(self, coordinate, origin):
         print("Coordinate", coordinate)
         print("Origin", origin)
-        distx = round((coordinate[0] - origin[0])*(self.resolution))
-        disty = round((coordinate[1] - origin[1])*(self.resolution))
+        distx = (coordinate[0] - self.origin[0])*(self.resolution)
+        disty = ((coordinate[1] - self.origin[1])*(self.resolution))
 
         return (distx, disty)
 
@@ -220,6 +234,10 @@ class Driver(Node):
         # self.pose.x = round(self.pose.x, 4)
         # self.pose.y = round(self.pose.y, 4)
         self.update_current_pose()
+        self.startPos = self.pose
+
+        # initialize starting position
+        # self.startPos
 
         if not self.got_global:
             self.initialPose.x = self.pose.x
@@ -269,6 +287,7 @@ class Driver(Node):
         return dist
 
     def drive(self):
+        self.update_pose()
         if self.startPos.x == 0.0:
             print("Watiing for pose")
             self.update_pose()
@@ -278,9 +297,9 @@ class Driver(Node):
             print("Start pose x:", self.startPos.x)
             print("Start pose y:", self.startPos.y)
 
-            # Get the input from the user.
-            self.goalPose.x = float(input("Set your x goal: "))
-            self.goalPose.y = float(input("Set your y goal: "))
+            # # Get the input from the user.
+            # self.goalPose.x = float(input("Set your x goal: "))
+            # self.goalPose.y = float(input("Set your y goal: "))
             self.LoadedFlag = True
 
         self.update_pose()
