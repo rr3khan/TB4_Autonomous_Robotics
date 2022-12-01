@@ -287,6 +287,12 @@ class Driver(Node):
             return
         elif not self.LoadedFlag:
             self.get_path()
+            print("Start pose x:", self.startPos.x)
+            print("Start pose y:", self.startPos.y)
+
+            # Get the input from the user.
+            self.goalPose.x = float(input("Set your x goal: "))
+            self.goalPose.y = float(input("Set your y goal: "))
             self.LoadedFlag = True
 
         self.update_pose()
