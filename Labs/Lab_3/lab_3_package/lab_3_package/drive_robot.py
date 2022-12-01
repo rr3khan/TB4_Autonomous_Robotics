@@ -105,8 +105,6 @@ class Driver(Node):
     #  in the initialization call the Astar module and calculate the path needed
 
     def initialise(self):
-        
-
         # Get the input from the user.
         self.goalPose.x = float(input("Set your x goal: "))
         self.goalPose.y = float(input("Set your y goal: "))
@@ -137,12 +135,14 @@ class Driver(Node):
         goal_px = self.dist_2_px((self.goalPose.x, self.startPos.y), [0, 0])
         print("Start px", start_px)
         print("Goal px", goal_px)
+
         pixel_path = astar_path_planner.findPath(start_px, goal_px)
+
         if len(pixel_path) == 0:
             print("Path not found")
             return
-        print("Pixel path:", pixel_path)
 
+        print("Pixel path:", pixel_path)
 
         # convert all pixel distances in map array to distance
         for index, pixel_coord in enumerate(pixel_path):
