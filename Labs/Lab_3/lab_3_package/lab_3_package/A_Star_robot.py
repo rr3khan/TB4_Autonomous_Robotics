@@ -35,6 +35,11 @@ class Pathfinder:
     def get_map_cords(self, x, y):
         return y,self.width-x
 
+    def G_to_P(self, x, y):
+        return (int(-x/self.res+220), int(y/self.res+70))
+    def P_to_G(self, x, y):
+        return ((x-220)*self.res, (y-70)*self.res)
+
     def findPath(self, startPos, endPos):
         #Reset global vars
         self.visited = set()
@@ -47,8 +52,10 @@ class Pathfinder:
         self.done = False
         self.path = []
         self.tree = Tree()
-        self.endPosition = endPos
-        self.startPosition = startPos
+        # self.endPosition = endPos
+        # self.startPosition = startPos
+        self.endPosition = self.G_to_P(endPos[0], endPos[1])
+        self.startPosition = self.G_to_P(startPos[0], startPos[1])
 
         #A*
         node = self.tree.create_node(tag='0', data=self.startPosition)
