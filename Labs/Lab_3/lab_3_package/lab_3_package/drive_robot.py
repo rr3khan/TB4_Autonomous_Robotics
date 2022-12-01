@@ -129,8 +129,7 @@ class Driver(Node):
         print("height", self.height)
         np_map = np.array(self.costmap_vector).reshape(-1, self.width).tolist()
         # print("NP map:", np_map)
-        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np_map
-                                                     )
+        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np_map)
 
         # find path pixel coordinates must be integres
 
@@ -141,6 +140,9 @@ class Driver(Node):
         print("Start px", start_px)
         print("Goal px", goal_px)
         pixel_path = astar_path_planner.findPath(start_px, goal_px)
+        if len(pixel_path) == 0:
+            print("Path not found")
+            return
         print("Pixel path:", pixel_path)
 
 

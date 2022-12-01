@@ -37,7 +37,7 @@ class runner:
         print("Running")
         self.maze = mapData
         self.showPath = True
-        self.findPath((30, 20),(160, 120))
+        self.findPath((0, 0),(160, 120))
 
     def get_map_cords(self, x, y):
         return y,self.width-x
