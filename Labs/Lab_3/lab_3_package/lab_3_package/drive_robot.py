@@ -105,6 +105,8 @@ class Driver(Node):
     #  in the initialization call the Astar module and calculate the path needed
 
     def initialise(self):
+        
+
         # Get the input from the user.
         self.goalPose.x = float(input("Set your x goal: "))
         self.goalPose.y = float(input("Set your y goal: "))
@@ -127,24 +129,22 @@ class Driver(Node):
         print("height", self.height)
         np_map = np.array(self.costmap_vector).reshape(-1, self.width).tolist()
         # print("NP map:", np_map)
-        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np_map)
+        astar_path_planner = A_Star_robot.Pathfinder(self.width, self.height, np_map, self.resolution
+                                                     )
 
         # find path pixel coordinates must be integres
 
         start_px = self.dist_2_px((self.startPos.x, self.startPos.y), [0, 0])
         goal_px = self.dist_2_px((self.goalPose.x, self.goalPose.y), [0, 0])
+        start_dx = (self.startPos.x, self.startPos.y)
+        goal_dx = (self.goalPose.x, self.goalPose.y)
         print("Start dist", self.startPos.x, self.startPos.y)
         print("Goal ddist", self.goalPose.x, self.goalPose.y)
         print("Start px", start_px)
         print("Goal px", goal_px)
-
-        pixel_path = astar_path_planner.findPath(start_px, goal_px)
-
-        if len(pixel_path) == 0:
-            print("Path not found")
-            return
-
+        pixel_path = astar_path_planner.findPath(start_dx, goal_dx)
         print("Pixel path:", pixel_path)
+
 
         # convert all pixel distances in map array to distance
         for index, pixel_coord in enumerate(pixel_path):
@@ -167,21 +167,29 @@ class Driver(Node):
     
     # takes a distance x y coordinate and converts it to a pixel location
     def dist_2_px(self, coordinate, origin):
-        px = round((coordinate[0] - self.origin[0])/(self.resolution))
-        py = round((coordinate[1] - self.origin[1])/(self.resolution))
+        # px = round((coordinate[0] - self.origin[0])/(self.resolution))
+        # py = round((coordinate[1] - self.origin[1])/(self.resolution))
+        # px = G_to_P()
 
-        print("Pixel px:", px)
-        print("Pixel py:", py)
+        # print("Pixel px:", px)
+        # print("Pixel py:", py)
 
-        return (px, py)
+        # return (px, py)
+        return  self.G_to_P((coordinate[0] - self.origin[0]), (coordinate[1] - self.origin[1]))
+
+    def G_to_P(self, x, y):
+        return (int(-x/self.resolution+220), int(y/self.resolution+70))
+
+    def P_to_G(self, x, y):
+        return ((x-220)*self.resolution, (y-70)*self.resolution)
 
     def px_2_dist(self, coordinate, origin):
         print("Coordinate", coordinate)
         print("Origin", origin)
-        distx = (coordinate[0] - self.origin[0])*(self.resolution)
-        disty = ((coordinate[1] - self.origin[1])*(self.resolution))
+        # distx = (coordinate[0] - self.origin[0])*(self.resolution)
+        # disty = ((coordinate[1] - self.origin[1])*(self.resolution))
 
-        return (distx, disty)
+        return self.P_to_G(coordinate[0], coordinate[1])
 
     
     # helper function to convert a quaternion to euler form
