@@ -6,7 +6,7 @@ from turtlesim.msg import Pose
 import time
 import numpy as np
 
-from math import pow, atan2, sqrt, asin
+from math import pow, atan2, sqrt, asin, pi
 from nav_msgs.msg import OccupancyGrid
 from nav2_simple_commander.robot_navigator import BasicNavigator
 # , NavigationResult # Helper module
@@ -36,6 +36,8 @@ class Driver(Node):
         # self.pose_sub = self.create_subscription(TFMessage, 'tf', self.pose_call_back, 10) # works for tf
         # testing with turtlesim
         # self.pose_sub = self.create_subscription(Pose, '/turtle1/pose', self.update_pose, 10)
+        self.x_off = 195
+        self.y_off = 74
         self.pose = Pose()
         self.curr_pose = Pose()
         self.timer_pose = self.create_timer(0.5, self.update_current_pose)
@@ -156,7 +158,7 @@ class Driver(Node):
 
     def costmap_callback(self, costmap_msg):
         # load the cost mapdata from the subscription
-        print("Printing map:")
+        # print("Printing map:")
         # set the costmap vector variable
         self.costmap_vector = costmap_msg.data
         # print(costmap_msg.data)
@@ -182,6 +184,8 @@ class Driver(Node):
 
     def P_to_G(self, x, y):
         return ((x-220)*self.resolution, (y-70)*self.resolution)
+    def P_to_G(self, x, y):
+        return ((x + self.x_off - self.width)*self.resolution, (y - self.y_off)*self.resolution)
 
     def px_2_dist(self, coordinate, origin):
         print("Coordinate", coordinate)
@@ -232,7 +236,7 @@ class Driver(Node):
             self.pose.x = t.transform.translation.x
             self.pose.y = t.transform.translation.y
             map_rotation = t.transform.rotation
-            _, _, self.pose.theta = self.euler_from_quaternion(map_rotation.x, map_rotation.y, map_rotation.z,map_rotation.w  )
+            _, _, self.pose.theta = self.euler_from_quaternion(map_rotation.x, map_rotation.y, map_rotation.z,map_rotation.w)
 
             # debug testing
             self.get_logger().info(f"Current Pose: [{self.pose.x:.3f},{self.pose.y:.3f},{self.pose.theta:.3f}]")
@@ -262,10 +266,15 @@ class Driver(Node):
     def is_at_target(self):
         x_error = self.targetPose.x - self.pose.x
         y_error = self.targetPose.y - self.pose.y
-        # range = 0.4
-        range = 0.1
+        range = 0.4
+        # range = 0.25
+        print("X error:", x_error)
+        print("Y error:", y_error)
+        print("Target Index:", self.target_index)
+        self.get_logger().info(
+            f'Going to target x {self.targets[self.target_index][0]} y {self.targets[self.target_index][1]}')
         if abs(x_error) < range and abs(y_error) < range:
-            if self.target_index < len(self.targets):
+            if self.target_index < len(self.targets)-1:
                 self.get_logger().info(
                 f'Going to target{self.targets[self.target_index][0]} to {self.targets[self.target_index][1]}')
                 # self.target_index += 1
@@ -321,8 +330,13 @@ class Driver(Node):
         self.is_at_target()
         vel_msg = Twist()
 
-        k_forward = 0.1
+        k_forward = 0.5
         k_angle = 1
+        # slow working values
+        # forward = 0.1
+        # anfle = 0.5
+        if abs(self.getAngleError()) > pi/6:
+            k_forward = 0  
 
         vel_msg.linear.x = self.getDistanceError() * k_forward
         vel_msg.linear.y = 0.0
