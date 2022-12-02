@@ -31,15 +31,15 @@ class Pathfinder:
         print("Running")
         self.maze = mapData
         self.showPath = True
-        self.x_off = 235
-        self.y_off = 83
-        # self.findPath((30, 20),(180, 120))
+        self.x_off = 195
+        self.y_off = 74
+        self.findPath((0, 0),(2.96, 2.3))
 
     def get_map_cords(self, x, y):
         return y,self.width-x
 
     def G_to_P(self, x, y):
-        return (int(-x / self.res + self.x_off), int(y / self.res + self.y_off))
+        return (self.width - int(-x / self.res + self.x_off), int(y / self.res + self.y_off))
 
     def P_to_G(self, x, y):
         return ((x - self.x_off) * self.res, (y - self.y_off) * self.res)
