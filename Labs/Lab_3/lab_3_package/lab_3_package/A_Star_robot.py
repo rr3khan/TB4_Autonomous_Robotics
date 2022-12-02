@@ -58,8 +58,8 @@ class Pathfinder:
         self.tree = Tree()
         # self.endPosition = endPos
         # self.startPosition = startPos
-        self.endPosition = self.G_to_P(-endPos[0], endPos[1])
-        self.startPosition = self.G_to_P(-startPos[0], startPos[1])
+        self.endPosition = self.G_to_P(endPos[0], endPos[1])
+        self.startPosition = self.G_to_P(startPos[0], startPos[1])
 
         #A*
         node = self.tree.create_node(tag='0', data=self.startPosition)
